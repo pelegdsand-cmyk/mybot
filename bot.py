@@ -12,11 +12,27 @@ from dotenv import load_dotenv
 from db import Store, from_iso
 from timeparse import day_bounds, next_occurrence, parse_day, parse_when
 
-load_dotenv()
+load_dotenv()                                  # local .env file
+load_dotenv("/etc/secrets/.env")               # Render "Secret File" named .env, if used
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("secretary")
 
-TOKEN = os.environ["DISCORD_TOKEN"]
+
+def find_token() -> str:
+    """Find the bot token even if the variable name has stray spaces or lowercase letters."""
+    for key, value in os.environ.items():
+        if key.strip().upper() == "DISCORD_TOKEN" and value.strip():
+            if key != "DISCORD_TOKEN":
+                log.warning("Found the token under %r; please rename it to exactly DISCORD_TOKEN", key)
+            return value.strip()
+    visible = sorted(k for k in os.environ if not k.startswith(("RENDER", "PYTHON", "LC_", "_")))
+    raise SystemExit(
+        "DISCORD_TOKEN is missing. Add it under Environment in Render, then redeploy.\n"
+        f"Variables this service can see (names only): {visible}"
+    )
+
+
+TOKEN = find_token()
 DEFAULT_TZ = os.getenv("DEFAULT_TZ", "Asia/Jerusalem")
 # Comma-separated Discord user IDs allowed to use the bot. Empty = anyone.
 ALLOWED_USERS = {int(x) for x in os.getenv("ALLOWED_USER_IDS", "").replace(" ", "").split(",") if x}

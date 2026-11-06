@@ -23,7 +23,17 @@ class Store:
     def __init__(self, path: str = DB_PATH):
         folder = os.path.dirname(path)
         if folder:
-            os.makedirs(folder, exist_ok=True)
+            try:
+                os.makedirs(folder, exist_ok=True)
+            except OSError:
+                fallback = os.path.basename(path) or "secretary.db"
+                print(
+                    f"WARNING: can't write to {folder!r} (is the disk mounted there?). "
+                    f"Using {fallback!r} instead; reminders will be lost on redeploy.",
+                    flush=True,
+                )
+                path = fallback
+        print(f"Database: {os.path.abspath(path)}", flush=True)
         self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.lock = threading.Lock()
