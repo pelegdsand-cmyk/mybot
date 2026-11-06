@@ -1,0 +1,23 @@
+services:
+  - type: worker              # always-on process (no web port needed)
+    name: discord-secretary
+    runtime: python
+    plan: starter             # cheapest always-on instance; free plan has no workers
+    region: frankfurt         # closest Render region to Israel
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false           # Render asks you to paste it during setup
+      - key: ALLOWED_USER_IDS
+        sync: false
+      - key: DEFAULT_TZ
+        value: Asia/Jerusalem
+      - key: DB_PATH
+        value: /var/data/secretary.db
+      - key: PYTHON_VERSION
+        value: 3.12.7
+    disk:                     # keeps reminders safe across restarts and deploys
+      name: secretary-data
+      mountPath: /var/data
+      sizeGB: 1
